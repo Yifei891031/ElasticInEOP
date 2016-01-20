@@ -6,12 +6,11 @@ using System.Threading.Tasks;
 
 namespace ElasticsearchInEOP
 {
-    class Program
+    /// <summary>
+    /// This class opens the file and read the wiki xml file and store them 
+    /// </summary>
+    class WikiReader
     {
-        static void Main(string[] args)
-        {
 
-        }
     }
-    
 }

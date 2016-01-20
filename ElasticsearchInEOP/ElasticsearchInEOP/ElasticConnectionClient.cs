@@ -6,12 +6,8 @@ using System.Threading.Tasks;
 
 namespace ElasticsearchInEOP
 {
-    class Program
+    class ElasticConnectionClient
     {
-        static void Main(string[] args)
-        {
 
-        }
     }
-    
 }
