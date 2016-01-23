@@ -5,6 +5,6 @@ public class FeedPackage
 {
 	public FeedPackage
 	{
-
+        public string 
 	}
 }
