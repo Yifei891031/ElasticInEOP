@@ -10,6 +10,11 @@ namespace ConsoleApplication1
     {
         static void Main(string[] args)
         {
+            string aa = "\"rfgdgfgdfgfc\"\"dfgdgg\"";
+            Console.WriteLine(aa);
+            aa = aa.TrimEnd('"').TrimStart('"');
+            Console.WriteLine(aa);
+            Console.Read();
         }
     }
 }

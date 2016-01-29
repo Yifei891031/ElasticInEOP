@@ -9,24 +9,31 @@ namespace ElasticsearchInEOP
 {
     class ElasticConnectionClient
     {
-        private static readonly ConnectionSettings _connectionSettings;
+        private static  ConnectionSettings _connectionSettings;
+        public static string host { get; set; }
+        public static int port { get; set; }
 
         public static string IndexAlia { get { return "MessageEvent"; } }
 
+       
 
-        public static Uri CreateUri(int port)
+        public static Uri CreateUri()
         {
-            var host = "localhost";
+            Console.WriteLine("http://" + host + ":" + port);
+            
             return new Uri("http://" + host + ":" + port);
         }
 
+        /*
         static ElasticConnectionClient()
         {
-            _connectionSettings = new ConnectionSettings(CreateUri(9200)).SetDefaultIndex("MessageEvent");
+            _connectionSettings = new ConnectionSettings(CreateUri()).SetDefaultIndex("MessageEvent");
         }
+        */
 
         public static ElasticClient GetClient()
         {
+            _connectionSettings = new ConnectionSettings(CreateUri()).SetDefaultIndex("MessageEvent");
             return new ElasticClient(_connectionSettings);
         }
 
