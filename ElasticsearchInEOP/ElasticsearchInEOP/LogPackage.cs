@@ -18,10 +18,11 @@ namespace ElasticsearchInEOP
         public void insertValue(string line)
         {
             string[] strs = line.Split('\t');
-            FeedPackage fp = new FeedPackage(strs);
-            LogPackages.Add(fp);
-
-
+            if(strs.Length == 32)
+            {
+                FeedPackage fp = new FeedPackage(strs);
+                LogPackages.Add(fp);
+            }
         }
     }
 }
