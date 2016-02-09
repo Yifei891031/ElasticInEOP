@@ -127,9 +127,7 @@ namespace ElasticsearchInEOP
                         Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
                         //Console.Read();
                         Environment.Exit(1);
-
                     }
-
                 }
                 catch {
                 
