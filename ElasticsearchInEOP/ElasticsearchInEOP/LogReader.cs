@@ -21,7 +21,7 @@ namespace ElasticsearchInEOP
             reader = new StreamReader(fileDir);
         }
 
-        public List<FeedPackage> PackagesWrapper(int bulkSize)
+        public List<Package> PackagesWrapper(int bulkSize)
         {
             LogPackage lp = new LogPackage();
 

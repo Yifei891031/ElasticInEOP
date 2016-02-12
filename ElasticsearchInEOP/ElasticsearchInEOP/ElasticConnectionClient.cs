@@ -13,7 +13,7 @@ namespace ElasticsearchInEOP
         public static string host { get; set; }
         public static int port { get; set; }
 
-        public static string IndexAlia { get { return "MessageEvent"; } }
+        public static string IndexAlia { get { return "mailflow"; } }
 
        
 
@@ -33,7 +33,7 @@ namespace ElasticsearchInEOP
 
         public static ElasticClient GetClient()
         {
-            _connectionSettings = new ConnectionSettings(CreateUri()).SetDefaultIndex("MessageEvent");
+            _connectionSettings = new ConnectionSettings(CreateUri()).SetDefaultIndex("mailflow");
             return new ElasticClient(_connectionSettings);
         }
 

@@ -23,13 +23,25 @@ namespace ElasticsearchInEOP
         private static int threadNum { get; set; }
         static void Main(string[] args)
         {
+
             if (args.Count() != 8)
             {
                 Console.WriteLine("Plese input index name, del flag, fileName, shardNum, bulkSize, thread number,  host and port, thank you");
                 Console.Read();
                 return;
             }
+            /*
+            indexName = "test";
+            delFlag = "T";
+            filePath = "E:\\testsplit";
+            shardNum = 6;
+            bulkSize = 2500;
+            threadNum = 1;
+            ElasticConnectionClient.host = "10.121.130.110";
+            ElasticConnectionClient.port = 9200;
+            */
 
+            
             indexName = args[0];
             delFlag = args[1];
             filePath = args[2];
@@ -39,13 +51,10 @@ namespace ElasticsearchInEOP
 
             ElasticConnectionClient.host = args[6];
             ElasticConnectionClient.port = Int32.Parse(args[7]);
-
-            //Console.WriteLine(ElasticConnectionClient.host + ":" + ElasticConnectionClient.port);
+            
 
             Client = ElasticConnectionClient.GetClient();
-            //path = "E:/TestData/EventMessageLog.tsv";       
-            //LogReaderInst = new LogReader(filePath);
-            if (delFlag.Equals("t") || delFlag.Equals("T"))//D stands for delete index and create new index
+            if (delFlag.Equals("t") || delFlag.Equals("T"))//T stands for delete index and create new index
             {
                 DeleteIndexIfExists();
                 CreateIndex();
@@ -57,20 +66,30 @@ namespace ElasticsearchInEOP
         
         static void CreateIndex()
         {
+            
             Client.CreateIndex(indexName, i => i
                                .NumberOfReplicas(0)
                                .NumberOfShards(shardNum)
                                .Settings(s => s.Add("search.slowlog.threshold.fetch.warn", "1s"))
-                               .AddMapping<FeedPackage>(m => m.MapFromAttributes()));
+                               .AddMapping<MSITPackage>(m => m.MapFromAttributes()));
+                               
+                               /*
+           Client.CreateIndex(indexName, i => i
+           .NumberOfReplicas(0)
+           .NumberOfShards(shardNum)
+           .Settings(s => s.Add("search.slowlog.threshold.fetch.warn", "1s")));
+           */
+
             Console.WriteLine("Create index successfully");
         }
 
         static void DeleteIndexIfExists()
         {
-            if (Client.IndexExists("eventmessage").Exists)
+            if (Client.IndexExists(indexName).Exists)
             {
-                Client.DeleteIndex("eventmessage");
+                Client.DeleteIndex(indexName);
             }
+
         }
 
         static void IndexPackages(string directory)
@@ -80,9 +99,10 @@ namespace ElasticsearchInEOP
             Console.WriteLine("Start Indexing...");
             for(int i = 0; i < Math.Min(files.Length,threadNum); ++i)
             {
-                ReadFile rf = new ReadFile(files[i], Client, bulkSize);
+                ReadFile rf = new ReadFile(files[i], Client, bulkSize, indexName);
                 Thread rfThread = new Thread(new ThreadStart(rf.index));
                 rfThread.Start();
+
             }
             Console.WriteLine("Indexing finished");
             //Console.Read();
@@ -96,11 +116,13 @@ namespace ElasticsearchInEOP
         private string fileName;
         private ElasticClient Client;
         private int bulkSize;
-        public ReadFile(string fileName, ElasticClient Client, int bulkSize)
+        private string indexName;
+        public ReadFile(string fileName, ElasticClient Client, int bulkSize, string indexname)
         {
             this.fileName = fileName;
             this.Client = Client;
             this.bulkSize = bulkSize;
+            this.indexName = indexname;
         }
 
         public void index()
@@ -109,13 +131,13 @@ namespace ElasticsearchInEOP
             Stopwatch sw = new Stopwatch();
             long LineCount = 0;
             sw.Start();
-            List<FeedPackage> packages = LogReaderInst.PackagesWrapper(bulkSize);
+            List<Package> packages = LogReaderInst.PackagesWrapper(bulkSize);
             while (packages != null && packages.Count >= 1)
             {
                 //Index
                 LineCount += packages.Count;
                 Console.WriteLine("Current total lines: {0}", LineCount);
-                try { var  result = Client.IndexMany<FeedPackage>(packages, "eventmessage");
+                try { var  result = Client.IndexMany<Package>(packages, indexName);
 
                     if (!result.IsValid)
                     {
