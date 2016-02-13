@@ -21,26 +21,16 @@ namespace ElasticsearchInEOP
         private static int bulkSize { get; set; }
         private static int shardNum { get; set; }
         private static int threadNum { get; set; }
+        private static string mapping { get; set; }
         static void Main(string[] args)
         {
 
-            if (args.Count() != 8)
+            if (args.Count() != 9)
             {
-                Console.WriteLine("Plese input index name, del flag, fileName, shardNum, bulkSize, thread number,  host and port, thank you");
+                Console.WriteLine("Plese input index name, del flag, fileName, shardNum, bulkSize, thread number,  host, port and package type, thank you");
                 Console.Read();
                 return;
             }
-            /*
-            indexName = "test";
-            delFlag = "T";
-            filePath = "E:\\testsplit";
-            shardNum = 6;
-            bulkSize = 2500;
-            threadNum = 1;
-            ElasticConnectionClient.host = "10.121.130.110";
-            ElasticConnectionClient.port = 9200;
-            */
-
             
             indexName = args[0];
             delFlag = args[1];
@@ -51,7 +41,7 @@ namespace ElasticsearchInEOP
 
             ElasticConnectionClient.host = args[6];
             ElasticConnectionClient.port = Int32.Parse(args[7]);
-            
+            mapping = args[8];
 
             Client = ElasticConnectionClient.GetClient();
             if (delFlag.Equals("t") || delFlag.Equals("T"))//T stands for delete index and create new index
@@ -60,35 +50,46 @@ namespace ElasticsearchInEOP
                 CreateIndex();
             }
             IndexPackages(filePath);
-            Console.WriteLine("Index Complete");
             Console.ReadKey();
         }
         
         static void CreateIndex()
         {
-            
-            Client.CreateIndex(indexName, i => i
+            switch (mapping)
+            {
+                case "msit":
+                    Client.CreateIndex(indexName, i => i
                                .NumberOfReplicas(0)
                                .NumberOfShards(shardNum)
                                .Settings(s => s.Add("search.slowlog.threshold.fetch.warn", "1s"))
                                .AddMapping<MSITPackage>(m => m.MapFromAttributes()));
-                               
-                               /*
-           Client.CreateIndex(indexName, i => i
-           .NumberOfReplicas(0)
-           .NumberOfShards(shardNum)
-           .Settings(s => s.Add("search.slowlog.threshold.fetch.warn", "1s")));
-           */
-
+                    break;
+                case "feed":
+                    Client.CreateIndex(indexName, i => i
+                               .NumberOfReplicas(0)
+                               .NumberOfShards(shardNum)
+                               .Settings(s => s.Add("search.slowlog.threshold.fetch.warn", "1s"))
+                               .AddMapping<FeedPackage>(m => m.MapFromAttributes()));
+                    break;
+                default:
+                    Client.CreateIndex(indexName, i => i
+                               .NumberOfReplicas(0)
+                               .NumberOfShards(shardNum)
+                               .Settings(s => s.Add("search.slowlog.threshold.fetch.warn", "1s"))
+                               .AddMapping<Package>(m => m.MapFromAttributes()));
+                    break;
+            }
             Console.WriteLine("Create index successfully");
         }
 
         static void DeleteIndexIfExists()
         {
+            Console.WriteLine("Deleting index: " + indexName);
             if (Client.IndexExists(indexName).Exists)
             {
                 Client.DeleteIndex(indexName);
             }
+            Console.WriteLine("Deleting index " + indexName + " successfully");
 
         }
 
