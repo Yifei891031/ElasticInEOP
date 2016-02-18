@@ -100,7 +100,7 @@ namespace ElasticsearchInEOP
             Console.WriteLine("Start Indexing...");
             for(int i = 0; i < Math.Min(files.Length,threadNum); ++i)
             {
-                ReadFile rf = new ReadFile(files[i], Client, bulkSize, indexName);
+                ReadFile rf = new ReadFile(files[i], Client, bulkSize, indexName, mapping);
                 Thread rfThread = new Thread(new ThreadStart(rf.index));
                 rfThread.Start();
 
@@ -118,12 +118,14 @@ namespace ElasticsearchInEOP
         private ElasticClient Client;
         private int bulkSize;
         private string indexName;
-        public ReadFile(string fileName, ElasticClient Client, int bulkSize, string indexname)
+        private string mapping;
+        public ReadFile(string fileName, ElasticClient Client, int bulkSize, string indexname, string mapping )
         {
             this.fileName = fileName;
             this.Client = Client;
             this.bulkSize = bulkSize;
             this.indexName = indexname;
+            this.mapping = mapping;
         }
 
         public void index()
@@ -132,30 +134,67 @@ namespace ElasticsearchInEOP
             Stopwatch sw = new Stopwatch();
             long LineCount = 0;
             sw.Start();
-            List<Package> packages = LogReaderInst.PackagesWrapper(bulkSize);
-            while (packages != null && packages.Count >= 1)
-            {
-                //Index
-                LineCount += packages.Count;
-                Console.WriteLine("Current total lines: {0}", LineCount);
-                try { var  result = Client.IndexMany<Package>(packages, indexName);
 
-                    if (!result.IsValid)
+
+            if (mapping.Equals("msit"))
+            {
+                List<MSITPackage> packages = LogReaderInst.MSITPackagesWrapper(bulkSize);
+                while (packages != null && packages.Count >= 1)
+                {
+                    //Index
+                    LineCount += packages.Count;
+                    Console.WriteLine("Current total lines: {0}", LineCount);
+                    try
+                    {
+                        var result = Client.IndexMany<MSITPackage>(packages, indexName);
+                        if (!result.IsValid)
+                        {
+
+                            foreach (var item in result.ItemsWithErrors)
+                            {
+                                Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
+                            }
+                            Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
+                            //Console.Read();
+                            Environment.Exit(1);
+                        }
+                    }
+                    catch
                     {
 
-                        foreach (var item in result.ItemsWithErrors)
-                        {
-                            Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
-                        }
-                        Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
-                        //Console.Read();
-                        Environment.Exit(1);
                     }
+                    packages = LogReaderInst.MSITPackagesWrapper(bulkSize);
                 }
-                catch {
-                
+            }
+            else if (mapping.Equals("feed"))
+            {
+                List<FeedPackage> packages = LogReaderInst.FeedPackagesWrapper(bulkSize);
+                while (packages != null && packages.Count >= 1)
+                {
+                    //Index
+                    LineCount += packages.Count;
+                    Console.WriteLine("Current total lines: {0}", LineCount);
+                    try
+                    {
+                        var result = Client.IndexMany<FeedPackage>(packages, indexName);
+                        if (!result.IsValid)
+                        {
+
+                            foreach (var item in result.ItemsWithErrors)
+                            {
+                                Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
+                            }
+                            Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
+                            //Console.Read();
+                            Environment.Exit(1);
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+                    packages = LogReaderInst.FeedPackagesWrapper(bulkSize);
                 }
-                packages = LogReaderInst.PackagesWrapper(bulkSize);
             }
             sw.Stop();
             Console.WriteLine("Time for indexing: {0}", sw.Elapsed);

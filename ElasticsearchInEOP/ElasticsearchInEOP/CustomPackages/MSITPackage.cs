@@ -8,7 +8,7 @@ using System.Net;
 
 namespace ElasticsearchInEOP
 {
-    class MSITPackage : Package
+    class MSITPackage 
     {
         public void wrap(string[] strs)
         {

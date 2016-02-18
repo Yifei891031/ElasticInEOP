@@ -11,24 +11,27 @@ namespace ElasticsearchInEOP
     {
         public LogPackage()
         {
-            LogPackages = new List<Package>();
+            MSITLogPackages = new List<MSITPackage>();
+            FeedLogPackages = new List<FeedPackage>();
         }
 
-        public List<Package> LogPackages { get; set; }
+        //public List<FeedPackage> LogPackages { get; set; }
+        public List<MSITPackage> MSITLogPackages { get; set; }
+        public List<FeedPackage> FeedLogPackages { get; set; }
 
         public void insertValue(string line)
         {
             string[] strs = line.Split('\t');
             if(strs.Length == 46)
             {
-                Package package = new MSITPackage();
+                MSITPackage package = new MSITPackage();
                 package.wrap(strs);
-                LogPackages.Add(package);
+                MSITLogPackages.Add(package);
             }else if(strs.Length == 32)
             {
-                Package package = new FeedPackage();
+                FeedPackage package = new FeedPackage();
                 package.wrap(strs);
-                LogPackages.Add(package);
+                FeedLogPackages.Add(package);
             }
         }
     }

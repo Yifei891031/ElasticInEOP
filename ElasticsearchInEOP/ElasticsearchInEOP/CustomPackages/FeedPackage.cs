@@ -3,7 +3,7 @@ using Nest;
 using ElasticsearchInEOP;
 
 
-public class FeedPackage : Package
+public class FeedPackage
 {
     public void wrap(string[] strs)
     {

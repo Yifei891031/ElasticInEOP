@@ -21,7 +21,7 @@ namespace ElasticsearchInEOP
             reader = new StreamReader(fileDir);
         }
 
-        public List<Package> PackagesWrapper(int bulkSize)
+        public List<FeedPackage> FeedPackagesWrapper(int bulkSize)
         {
             LogPackage lp = new LogPackage();
 
@@ -34,7 +34,24 @@ namespace ElasticsearchInEOP
             {
                 this.endflag = true;
             }
-            return lp.LogPackages;
+            return lp.FeedLogPackages;
+        }
+
+        public List<MSITPackage> MSITPackagesWrapper(int bulkSize)
+        {
+            LogPackage lp = new LogPackage();
+
+            for (int i = 0; !reader.EndOfStream && i < bulkSize; ++i)
+            {
+                string line = reader.ReadLine();
+                lp.insertValue(line);
+            }
+            if (reader.EndOfStream)
+            {
+                this.endflag = true;
+            }
+            return lp.MSITLogPackages;
+
         }
     }
 }
