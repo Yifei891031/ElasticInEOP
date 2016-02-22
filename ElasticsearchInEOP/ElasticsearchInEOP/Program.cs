@@ -43,13 +43,15 @@ namespace ElasticsearchInEOP
             ElasticConnectionClient.port = Int32.Parse(args[7]);
             mapping = args[8];
 
-            Client = ElasticConnectionClient.GetClient();
+            Client = ElasticConnectionClient.GetClient(indexName);
             if (delFlag.Equals("t") || delFlag.Equals("T"))//T stands for delete index and create new index
             {
                 DeleteIndexIfExists();
                 CreateIndex();
             }
-            IndexPackages(filePath);
+                IndexPackages(filePath, delFlag);
+
+            
             Console.ReadKey();
         }
         
@@ -93,21 +95,26 @@ namespace ElasticsearchInEOP
 
         }
 
-        static void IndexPackages(string directory)
+        static void IndexPackages(string directory, string delFlag)
         {
 
             string[] files = Directory.GetFiles(directory);
-            Console.WriteLine("Start Indexing...");
+            if(delFlag.Equals("F") || delFlag.Equals("f") || delFlag.Equals("T") || delFlag.Equals("t"))
+            {
+                Console.WriteLine("Start Indexing...");
+            }
+            else
+            {
+                Console.WriteLine("Start Updating...");
+            }
+            
             for(int i = 0; i < Math.Min(files.Length,threadNum); ++i)
             {
-                ReadFile rf = new ReadFile(files[i], Client, bulkSize, indexName, mapping);
+                ReadFile rf = new ReadFile(files[i], Client, bulkSize, indexName, mapping, delFlag);
                 Thread rfThread = new Thread(new ThreadStart(rf.index));
                 rfThread.Start();
 
             }
-            Console.WriteLine("Indexing finished");
-            //Console.Read();
-
         }
         
     }
@@ -119,13 +126,15 @@ namespace ElasticsearchInEOP
         private int bulkSize;
         private string indexName;
         private string mapping;
-        public ReadFile(string fileName, ElasticClient Client, int bulkSize, string indexname, string mapping )
+        private string updateFlag;
+        public ReadFile(string fileName, ElasticClient Client, int bulkSize, string indexname, string mapping, string updateFlag)
         {
             this.fileName = fileName;
             this.Client = Client;
             this.bulkSize = bulkSize;
             this.indexName = indexname;
             this.mapping = mapping;
+            this.updateFlag = updateFlag;
         }
 
         public void index()
@@ -134,8 +143,6 @@ namespace ElasticsearchInEOP
             Stopwatch sw = new Stopwatch();
             long LineCount = 0;
             sw.Start();
-
-
             if (mapping.Equals("msit"))
             {
                 List<MSITPackage> packages = LogReaderInst.MSITPackagesWrapper(bulkSize);
@@ -146,22 +153,65 @@ namespace ElasticsearchInEOP
                     Console.WriteLine("Current total lines: {0}", LineCount);
                     try
                     {
-                        var result = Client.IndexMany<MSITPackage>(packages, indexName);
-                        if (!result.IsValid)
-                        {
-
-                            foreach (var item in result.ItemsWithErrors)
+                        if(updateFlag.Equals("F") || updateFlag.Equals("f") || updateFlag.Equals("T") || updateFlag.Equals("t")) {//Indexing
+                            var result = Client.IndexMany<MSITPackage>(packages, indexName);
+                            if (!result.IsValid)
                             {
-                                Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
-                            }
-                            Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
-                            //Console.Read();
-                            Environment.Exit(1);
-                        }
-                    }
-                    catch
-                    {
 
+                                foreach (var item in result.ItemsWithErrors)
+                                {
+                                    Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
+                                }
+                                Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
+                                //Console.Read();
+                                Environment.Exit(1);
+                            }
+                        }
+                        else//Updating
+                        {
+                            List<IBulkOperation> bulkOpt = new List<IBulkOperation>(bulkSize);
+
+                            for(int i = 0; i < packages.Count; ++i)
+                            {
+
+                                MSITPackage p = packages[i];
+                                /*
+                                Client.Update<MSITPackage, object>(u => u
+                                      .IdFrom(p)
+                                      .Doc(new {CustomData = p.CustomData, VerdictCF = p.VerdictCF, OriginalIP = p.OriginalIP, Category = p.Category })
+                                      .DocAsUpsert()
+                                      );
+                                */
+                                BulkUpdateOperation<MSITPackage, object> bo = new BulkUpdateOperation<MSITPackage, object>(p, new { CustomData = "123435CustomData", VerdictCF = p.VerdictCF, OriginalIP = p.OriginalIP, Category = p.Category }, false);
+                                bo.RetriesOnConflict = 3;
+                                //BulkUpdateOperation<MSITPackage, object> bo = new BulkUpdateOperation<MSITPackage, object>(p, new { CustomData = p.CustomData, VerdictCF = p.VerdictCF, OriginalIP = p.OriginalIP, Category = p.Category });
+                                bulkOpt.Add(bo);
+                            }
+                            var request = new BulkRequest()
+                            {
+                                Refresh = true,
+                                Consistency = Elasticsearch.Net.Consistency.One,
+                                Operations = bulkOpt
+                            };
+                            //Console.WriteLine("Bulk indexing");
+                            var result = Client.Bulk(request);
+                            if (!result.IsValid)
+                            {
+
+                                foreach (var item in result.ItemsWithErrors)
+                                {
+                                    Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
+                                }
+                                Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
+                                //Console.Read();
+                                Environment.Exit(1);
+                            }
+                        }
+                        
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine(e.Message);
                     }
                     packages = LogReaderInst.MSITPackagesWrapper(bulkSize);
                 }
@@ -176,22 +226,75 @@ namespace ElasticsearchInEOP
                     Console.WriteLine("Current total lines: {0}", LineCount);
                     try
                     {
-                        var result = Client.IndexMany<FeedPackage>(packages, indexName);
-                        if (!result.IsValid)
+                        if(updateFlag.Equals("F") || updateFlag.Equals("f") || updateFlag.Equals("T") || updateFlag.Equals("t"))
                         {
-
-                            foreach (var item in result.ItemsWithErrors)
+                            var result = Client.IndexMany<FeedPackage>(packages, indexName);
+                            if (!result.IsValid)
                             {
-                                Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
-                            }
-                            Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
-                            //Console.Read();
-                            Environment.Exit(1);
-                        }
-                    }
-                    catch
-                    {
 
+                                foreach (var item in result.ItemsWithErrors)
+                                {
+                                    Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
+                                }
+                                Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
+                                //Console.Read();
+                                Environment.Exit(1);
+                            }
+                        }
+                        else
+                        {
+                            /*
+                            for (int i = 0; i < packages.Count; ++i)
+                            {
+                                FeedPackage p = packages[i];
+                                Client.Update<FeedPackage, object>(u => u
+                                      .IdFrom(p)
+                                      .Doc(new { sequence_number = p.sequence_number })
+                                      .DocAsUpsert()
+                                      );
+                            }
+                            */
+
+                            List<IBulkOperation> bulkOpt = new List<IBulkOperation>(bulkSize);
+
+                            for (int i = 0; i < packages.Count; ++i)
+                            {
+
+                                FeedPackage p = packages[i];
+                                /*
+                                Client.Update<MSITPackage, object>(u => u
+                                      .IdFrom(p)
+                                      .Doc(new {CustomData = p.CustomData, VerdictCF = p.VerdictCF, OriginalIP = p.OriginalIP, Category = p.Category })
+                                      .DocAsUpsert()
+                                      );
+                                */
+                                BulkUpdateOperation<FeedPackage, object> bo = new BulkUpdateOperation<FeedPackage, object>(p, new { sequence_number = p.sequence_number });
+                                bulkOpt.Add(bo);
+                            }
+                            var request = new BulkRequest()
+                            {
+                                Refresh = true,
+                                Consistency = Elasticsearch.Net.Consistency.One,
+                                Operations = bulkOpt
+                            };
+                            var result = Client.Bulk(request);
+                            if (!result.IsValid)
+                            {
+
+                                foreach (var item in result.ItemsWithErrors)
+                                {
+                                    Console.WriteLine("Failed to index document {0}:{1}", item.Id, item.Error);
+                                }
+                                Console.WriteLine(result.ConnectionStatus.OriginalException.Message);
+                                //Console.Read();
+                                Environment.Exit(1);
+                            }
+                        }
+                        
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine(e.Message);
                     }
                     packages = LogReaderInst.FeedPackagesWrapper(bulkSize);
                 }

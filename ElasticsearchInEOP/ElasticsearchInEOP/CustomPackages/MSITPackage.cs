@@ -8,78 +8,86 @@ using System.Net;
 
 namespace ElasticsearchInEOP
 {
-    class MSITPackage 
+    class MSITPackage : Package
     {
         public void wrap(string[] strs)
         {
             if (!strs[0].Equals(""))
             {
-                this.TimeStamp = DateTime.Parse(strs[0]);
+                this.Id = Guid.Parse(strs[0]);
             }
-            this.TenantId = strs[1];
-            this.NetworkMessageId = strs[2];
-            this.MessageId = strs[3];
-            this.Source = strs[4];
-            this.TransportDirectionality = strs[5];
-            this.Directionality = strs[6];
-            if (!strs[7].Equals(""))
+            
+            if (!strs[1].Equals(""))
             {
-                this.RecipientCount = int.Parse(strs[7]);
+                this.TimeStamp = DateTime.Parse(strs[1]);
             }
-            this.Recipient = strs[8];
-            this.RecipientDomain = strs[9];
-            this.RecipientType = strs[10];
-            this.P1Sender = strs[11];
-            this.P1Domain = strs[12];
-            this.P2Sender = strs[13];
-            this.P2Domain = strs[14];
-
-
-            this.OriginalIP = strs[15];
-            this.Slash24Subnet = strs[16];
-            this.FilterControl = strs[17];
-            this.FilterSubControl = strs[18];
-            this.VerdictEDGE = strs[19];
-            this.VerdictCF = strs[20];
-            this.VerdictMBX = strs[21];
-            this.Verdict = strs[22];
-            this.VerdictSubType = strs[23];
-            this.MessageType = strs[24];
-            this.FingerPrintBody = strs[25];
-            this.FingerPrintRaw = strs[26];
-            this.BodyBin1 = strs[27];
-            this.RawBin1 = strs[28];
-            this.Category = strs[29];
-            this.SubCategory = strs[30];
-            this.CustomData = strs[31];
-            this.FileName = strs[32];
-            this.FileType = strs[33];
-
-            if (!strs[34].Equals(""))
+            this.TenantId = strs[2];
+            this.NetworkMessageId = strs[3];
+            this.MessageId = strs[4];
+            this.Source = strs[5];
+            this.TransportDirectionality = strs[6];
+            this.Directionality = strs[7];
+            if (!strs[8].Equals(""))
             {
-                this.FileVerdict = int.Parse(strs[34]);
+                this.RecipientCount = int.Parse(strs[8]);
             }
+            this.Recipient = strs[9];
+            this.RecipientDomain = strs[10];
+            this.RecipientType = strs[11];
+            this.P1Sender = strs[12];
+            this.P1Domain = strs[13];
+            this.P2Sender = strs[14];
+            this.P2Domain = strs[15];
+
+
+            this.OriginalIP = strs[16];
+            this.Slash24Subnet = strs[17];
+            this.FilterControl = strs[18];
+            this.FilterSubControl = strs[19];
+            this.VerdictEDGE = strs[20];
+            this.VerdictCF = strs[21];
+            this.VerdictMBX = strs[22];
+            this.Verdict = strs[23];
+            this.VerdictSubType = strs[24];
+            this.MessageType = strs[25];
+            this.FingerPrintBody = strs[26];
+            this.FingerPrintRaw = strs[27];
+            this.BodyBin1 = strs[28];
+            this.RawBin1 = strs[29];
+            this.Category = strs[30];
+            this.SubCategory = strs[31];
+            this.CustomData = strs[32];
+            this.FileName = strs[33];
+            this.FileType = strs[34];
+
             if (!strs[35].Equals(""))
             {
-                this.FileSize = int.Parse(strs[35]);
+                this.FileVerdict = int.Parse(strs[35]);
+            }
+            if (!strs[36].Equals(""))
+            {
+                this.FileSize = int.Parse(strs[36]);
             }
 
-            this.FileHFH = strs[36];
-            this.FileFilterSubControl = strs[37];
-            this.EventualVerdict = strs[38];
-            this.MicrosoftVirusFamily = strs[39];
-            this.CyrenVirusFamily = strs[40];
-            this.KasperskyVirusFamily = strs[41];
-            this.SonarVerdict = strs[42];
-            this.CHLVerdict = strs[43];
-            this.MalwareInfo = strs[44];
-            if (!strs[45].Equals(""))
+            this.FileHFH = strs[37];
+            this.FileFilterSubControl = strs[38];
+            this.EventualVerdict = strs[39];
+            this.MicrosoftVirusFamily = strs[40];
+            this.CyrenVirusFamily = strs[41];
+            this.KasperskyVirusFamily = strs[42];
+            this.SonarVerdict = strs[43];
+            this.CHLVerdict = strs[44];
+            this.MalwareInfo = strs[45];
+            if (!strs[46].Equals(""))
             {
-                this.PartitionId = int.Parse(strs[45]);
+                this.PartitionId = int.Parse(strs[46]);
             }
         }
 
         public MSITPackage() { }
+
+        [ElasticProperty(Index = FieldIndexOption.NotAnalyzed)]
+        public Guid Id { get; set; }
 
         [ElasticProperty(Index = FieldIndexOption.NotAnalyzed)]
         public DateTime TimeStamp { get; set; }

@@ -31,9 +31,9 @@ namespace ElasticsearchInEOP
         }
         */
 
-        public static ElasticClient GetClient()
+        public static ElasticClient GetClient(string indexName)
         {
-            _connectionSettings = new ConnectionSettings(CreateUri()).SetDefaultIndex("mailflow");
+            _connectionSettings = new ConnectionSettings(CreateUri()).SetDefaultIndex(indexName);
             return new ElasticClient(_connectionSettings);
         }
 

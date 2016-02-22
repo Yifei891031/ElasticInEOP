@@ -22,7 +22,7 @@ namespace ElasticsearchInEOP
         public void insertValue(string line)
         {
             string[] strs = line.Split('\t');
-            if(strs.Length == 46)
+            if(strs.Length == 47)
             {
                 MSITPackage package = new MSITPackage();
                 package.wrap(strs);
